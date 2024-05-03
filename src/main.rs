@@ -6,7 +6,22 @@ use vector3::Vector3;
 use crate::color::write_color;
 use ray::Ray;
 
+
+
+fn hit_sphere(center: Vector3, radius: f64, r: Ray) -> bool {
+    let oc = center - *r.origin();
+    let a = r.direction().dot(r.direction());
+    let b = -2.0 * r.direction().dot(&oc);
+    let c = oc.dot(&oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+
+    discriminant >= 0 as f64
+}
+
 fn ray_color(r:Ray) -> Vector3 {
+    if hit_sphere(Vector3::new(0.0,0.0,-1.0), 0.5, r) {
+        return Vector3::new(1.0, 0.0, 0.0)
+    }
     let unit_direction = *r.direction() /  (r.direction().x * r.direction().x +r.direction().y * r.direction().y +r.direction().z * r.direction().z).sqrt() ;
     let a = 0.5 * (unit_direction.y + 1.0);
     return Vector3::new(1.0, 1.0, 1.0)  * (1.0 - a)  + Vector3::new(0.5, 0.7, 1.0) * a;
@@ -35,7 +50,7 @@ fn main() -> io::Result<()> {
     let pixel_delta_v = viewport_v / image_height as f64;
 
     // Calculate the location of the upper left pixel.
-    let viewport_upper_left = camera_center - Vector3::new(0.0, 0.0, focal_length);
+    let viewport_upper_left = camera_center - Vector3::new(0.0, 0.0, focal_length) - viewport_u/2.0- viewport_v/2.0;
     let pixel00_loc = viewport_upper_left +  (pixel_delta_u + pixel_delta_v)*0.5;
 
     // Render

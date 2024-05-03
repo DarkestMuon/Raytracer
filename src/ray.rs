@@ -1,6 +1,7 @@
 extern crate vector3;
 use vector3::Vector3;
 
+#[derive(Copy,Clone)]
 pub struct Ray {
     pub orig: Vector3, // Assuming Vector3 is a struct with x, y, z fields of type f64
     pub dir: Vector3,    // Assuming Vector3 is a struct with x, y, z fields of type f64
