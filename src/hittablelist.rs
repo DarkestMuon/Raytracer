@@ -1,8 +1,6 @@
 use std::sync::Arc;
-use crate::hittable;
 use crate::hittable::HitRecord;
 use crate::hittable::Hittable;
-use crate::ray;
 use crate::ray::Ray;
 
 pub struct HittableList {
