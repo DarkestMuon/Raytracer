@@ -1,4 +1,9 @@
-fn main() {
+extern crate vector3;
+mod color;
+use std::io;
+use vector3::Vector3;
+use crate::color::write_color;
+fn main() -> io::Result<()> {
     // Image dimensions
     let image_width = 256;
     let image_height = 256;
@@ -8,15 +13,16 @@ fn main() {
 
     for j in 0..image_height {
         for i in 0..image_width {
-            let r = i as f64 / (image_width - 1) as f64;
-            let g = j as f64 / (image_height - 1) as f64;
-            let b = 0.0;
+        // Create a Vector3<f64> object representing the pixel color
+        let pixel_color = Vector3::new(
+            i as f64/ (image_width - 1) as f64,
+            j as f64 / (image_height - 1) as f64,
+            0.0,
+        );
 
-            let ir = (r * 255.999) as u8;
-            let ig = (g * 255.999) as u8;
-            let ib = (b * 255.999) as u8;
-
-            println!("{} {} {}", ir, ig, ib);
+        // Write the pixel color to stdout
+        write_color(&mut io::stdout(), pixel_color)?;
         }
     }
+    Ok(())
 }
