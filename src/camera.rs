@@ -1,9 +1,10 @@
 use std::io;
 
+use rand::Rng;
 use vector3::Vector3;
 
 use crate::{color::write_color, hittable::{HitRecord, Hittable}, ray::Ray};
-
+#[derive(Copy,Clone)]
 pub struct  Camera {
     pub aspect_ratio: f64,
     pub image_width: f64,
@@ -12,6 +13,8 @@ pub struct  Camera {
     pixel00_loc: Vector3,
     pixel_delta_u: Vector3,
     pixel_delta_v: Vector3,
+    samples_per_pixel: u32,
+    pixel_samples_scale: f64,
 }
 
 impl Camera {
@@ -37,7 +40,8 @@ impl Camera {
         // Calculate the location of the upper left pixel.
         let viewport_upper_left = center - Vector3::new(0.0, 0.0, focal_length) - viewport_u/2.0- viewport_v/2.0;
         let pixel00_loc = viewport_upper_left +  (pixel_delta_u + pixel_delta_v)*0.5;
-
+        let samples_per_pixel=10;
+        let pixel_samples_scale = 1.0 / samples_per_pixel as f64;
         Camera {
             aspect_ratio,
             image_width,
@@ -46,6 +50,9 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            samples_per_pixel,
+            pixel_samples_scale,
+
         }
     }
     fn ray_color(r:Ray, world: &dyn Hittable) -> Vector3 {
@@ -63,15 +70,37 @@ impl Camera {
 
     for j in 0..self.image_height {
         for i in 0..self.image_width as u128 {
-            let pixel_center = self.pixel00_loc + (self.pixel_delta_u * i as f64 ) + (self.pixel_delta_v * j as f64);
-            let ray_direction = pixel_center - self.center;
-            let r = Ray::new_with_origin_and_direction(self.center, ray_direction);
-            let pixel_color = Self::ray_color(r,world);
+            let mut pixel_color = Vector3::new(0.0, 0.0, 0.0);
+            for _ in 0..self.samples_per_pixel {
+                    let  r = self.get_ray(i as u32, j as u32 );
+                    pixel_color = pixel_color + Self::ray_color(r, world);
+            }
+
 
             // Write the pixel color to stdout
-            write_color(&mut io::stdout(), pixel_color)?;
+            write_color(&mut io::stdout(),  pixel_color * self.pixel_samples_scale )?;
         }
     }
     Ok(())
+    }
+    fn get_ray(self,i:u32, j:u32) -> Ray {
+        // Construct a camera ray originating from the origin and directed at randomly sampled
+        // point around the pixel location i, j.
+
+        let offset = Self::sample_square();
+        let pixel_sample = self.pixel00_loc
+                          + ( self.pixel_delta_u * ((i as f64 + offset.x)).into())
+                          + ( self.pixel_delta_v * ((j as f64 + offset.y)).into() );
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin;
+
+        return Ray::new_with_origin_and_direction(ray_origin, ray_direction);
+    }
+
+    fn sample_square() -> Vector3 {
+        // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+        let mut rng = rand::thread_rng();
+        return Vector3::new(rng.gen_range(-0.5..0.5),rng.gen_range(-0.5..0.5), 0.0);
     }
 }
