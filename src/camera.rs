@@ -3,7 +3,7 @@ use std::io;
 use rand::Rng;
 use vector3::Vector3;
 
-use crate::{color::write_color, hittable::{HitRecord, Hittable}, ray::Ray};
+use crate::{color::write_color, hittable::{HitRecord, Hittable}, ray::Ray, vec3::{random_on_hemisphere, random_unit_vector}};
 #[derive(Copy,Clone)]
 pub struct  Camera {
     pub aspect_ratio: f64,
@@ -15,6 +15,7 @@ pub struct  Camera {
     pixel_delta_v: Vector3,
     samples_per_pixel: u32,
     pixel_samples_scale: f64,
+    max_depth: u32,
 }
 
 impl Camera {
@@ -42,6 +43,7 @@ impl Camera {
         let pixel00_loc = viewport_upper_left +  (pixel_delta_u + pixel_delta_v)*0.5;
         let samples_per_pixel=10;
         let pixel_samples_scale = 1.0 / samples_per_pixel as f64;
+        let max_depth=10;
         Camera {
             aspect_ratio,
             image_width,
@@ -52,13 +54,16 @@ impl Camera {
             pixel_delta_v,
             samples_per_pixel,
             pixel_samples_scale,
+            max_depth,
 
         }
     }
-    fn ray_color(r:Ray, world: &dyn Hittable) -> Vector3 {
+    fn ray_color(r:Ray,depth:u32, world: &dyn Hittable) -> Vector3 {
+        if depth <= 0 {return Vector3::new(0.0,0.0,0.0);}
         let mut rec:HitRecord=HitRecord::new();
-        if world.hit(r, 0.0, 10000000.0, &mut rec) {
-            return (rec.normal + Vector3::new(1.0,1.0,1.0))* 0.5  ;
+        if world.hit(r, 0.001, 10000000.0, &mut rec) {
+            let direction = rec.normal + random_unit_vector();
+            return  Self::ray_color(Ray::new_with_origin_and_direction(rec.p, direction),depth-1, world) * 0.5;
         }
         let unit_direction = *r.direction() /  (r.direction().x * r.direction().x +r.direction().y * r.direction().y +r.direction().z * r.direction().z).sqrt() ;
         let a = 0.5 * (unit_direction.y + 1.0);
@@ -73,7 +78,7 @@ impl Camera {
             let mut pixel_color = Vector3::new(0.0, 0.0, 0.0);
             for _ in 0..self.samples_per_pixel {
                     let  r = self.get_ray(i as u32, j as u32 );
-                    pixel_color = pixel_color + Self::ray_color(r, world);
+                    pixel_color = pixel_color + Self::ray_color(r,self.max_depth, world);
             }
 
 
