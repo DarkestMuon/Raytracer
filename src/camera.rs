@@ -3,7 +3,7 @@ use std::io;
 use rand::Rng;
 use vector3::Vector3;
 
-use crate::{color::write_color, hittable::{HitRecord, Hittable}, ray::Ray, vec3::{random_on_hemisphere, random_unit_vector}};
+use crate::{color::write_color, hittable::{HitRecord, Hittable}, ray::Ray, vec3::random_unit_vector};
 #[derive(Copy,Clone)]
 pub struct  Camera {
     pub aspect_ratio: f64,
